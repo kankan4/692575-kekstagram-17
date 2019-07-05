@@ -72,30 +72,20 @@ function generateMocks() {
   return pictures;
 }
 
-function makeElement(tagName, className, text) {
-  var element = document.createElement(tagName);
-  element.classList.add(className);
-  if (text) {
-    element.textContent = text;
-  }
-  return element;
-}
-
 function createPictureElement(picture) {
-  var element = makeElement('a', 'picture');
+  var pictureTemplate = document.querySelector('#picture').content.querySelector('.picture');
+  var pictureElement = pictureTemplate.cloneNode(true);
 
-  var img = makeElement('img', 'picture__img');
+  var img = pictureElement.querySelector('.picture__img');
   img.src = picture.url;
-  element.appendChild(img);
 
-  var pictureInfo = makeElement('p', 'picture__info');
-  element.appendChild(pictureInfo);
-  var commentsElement = makeElement('span', 'picture__comments', picture.comments.length);
-  pictureInfo.appendChild(commentsElement);
-  var likesElement = makeElement('span', 'picture__likes', picture.likes);
-  pictureInfo.appendChild(likesElement);
+  var commentsElement = pictureElement.querySelector('.picture__comments');
+  commentsElement.textContent = picture.comments.length;
 
-  return element;
+  var likesElement = pictureElement.querySelector('.picture__likes');
+  likesElement.textContent = picture.likes;
+
+  return pictureElement;
 }
 
 function addPicturesToPage(pictures) {
