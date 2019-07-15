@@ -235,3 +235,12 @@ function changeScale(changeStep) {
   scaleControlValue.value = newValue + '%';
   uploadedImage.style.transform = 'scale(' + newValue / 100 + ')';
 }
+
+// Обработка поля с комментарием
+var descriptionField = document.querySelector('.text__description');
+descriptionField.addEventListener('focusin', function () {
+  document.removeEventListener('keydown', onPopupEscPress);
+});
+descriptionField.addEventListener('focusout', function () {
+  document.addEventListener('keydown', onPopupEscPress);
+});
