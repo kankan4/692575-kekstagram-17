@@ -18,10 +18,48 @@ var NameTemplates = {
 
 var ESC_KEYCODE = 27;
 var EFFECT_CLASSNAME_PREFIX = 'effects__preview--';
-var EFFECT_NONE_VALUE = 'none';
-var EFFECT_NONE_CLASS = EFFECT_CLASSNAME_PREFIX + EFFECT_NONE_VALUE;
+var EFFECT_NONE_NAME = 'none';
+var EFFECT_NONE_CLASS = EFFECT_CLASSNAME_PREFIX + EFFECT_NONE_NAME;
 var SCALE_STEP = 25;
+var SLIDER_DEFAULT_VALUE = 100;
 
+var EFFECTS_INFO = [
+  {
+    type: 'chrome',
+    filter: 'grayscale',
+    minValue: 0,
+    maxValue: 1,
+    unit: ''
+  },
+  {
+    type: 'sepia',
+    filter: 'sepia',
+    minValue: 0,
+    maxValue: 1,
+    unit: ''
+  },
+  {
+    type: 'marvin',
+    filter: 'invert',
+    minValue: 0,
+    maxValue: 100,
+    unit: '%'
+  },
+  {
+    type: 'phobos',
+    filter: 'blur',
+    minValue: 0,
+    maxValue: 3,
+    unit: 'px'
+  },
+  {
+    type: 'heat',
+    filter: 'brightness',
+    minValue: 1,
+    maxValue: 3,
+    unit: ''
+  }
+];
 
 // Генерация моков и добавление фотографий на страницу
 
@@ -111,81 +149,96 @@ function addPicturesToPage(pictures) {
 var pictures = generateMocks();
 addPicturesToPage(pictures);
 
+var uploadButton = document.querySelector('#upload-file');
+uploadButton.addEventListener('change', openPopup);
 
-// Управление окном загрузки изображения
+
+// Компоненты окна загрузки загрузки изображения
 var uploadedImageForm = document.querySelector('.img-upload__overlay');
 var uploadedImage = uploadedImageForm.querySelector('.img-upload__preview');
 var imageEffectsList = document.querySelectorAll('.effects__list .effects__radio');
-var uploadButton = document.querySelector('#upload-file');
 var cancelButton = uploadedImageForm.querySelector('#upload-cancel');
-
 var effectLevelControls = uploadedImageForm.querySelector('.img-upload__effect-level');
+var descriptionField = document.querySelector('.text__description');
+
+// Компоненты слайдера
+var sliderPin = effectLevelControls.querySelector('.effect-level__pin');
+var sliderLineDepth = effectLevelControls.querySelector('.effect-level__depth');
+var sliderValueControl = effectLevelControls.querySelector('.effect-level__value');
+
+// Компоненты масштабирования изображения
+var scaleControls = uploadedImageForm.querySelector('.img-upload__scale');
+var scaleControlSmaller = scaleControls.querySelector('.scale__control--smaller');
+var scaleControlBigger = scaleControls.querySelector('.scale__control--bigger');
+var scaleControlValue = scaleControls.querySelector('.scale__control--value');
+
+// Наименование текущего выбранного эффекта
+var currentEffectName = EFFECT_NONE_NAME;
+
+
+// Масштабирование изображения
+function changeScale(changeStep) {
+  var currentValue = parseInt(scaleControlValue.value, 10);
+  var newValue = currentValue + changeStep;
+  scaleControlValue.value = newValue + '%';
+  uploadedImage.style.transform = 'scale(' + newValue / 100 + ')';
+}
+
+scaleControlSmaller.addEventListener('click', function () {
+  if (parseInt(scaleControlValue.value, 10) > 25) {
+    changeScale(-SCALE_STEP);
+  }
+});
+scaleControlBigger.addEventListener('click', function () {
+  if (parseInt(scaleControlValue.value, 10) < 100) {
+    changeScale(SCALE_STEP);
+  }
+});
+
+// Управлени эффектами
+function setSliderPositionByValue(value) {
+  var valueInPixels = Math.floor(sliderLineDepth.offsetParent.clientWidth * value / 100);
+  sliderPin.style.left = valueInPixels + 'px';
+  sliderLineDepth.style.width = valueInPixels + 'px';
+}
 
 function removeImageFilters(image) {
-  for (var i = 0; i < image.classList.length; i++) {
-    if (image.classList[i].startsWith(EFFECT_CLASSNAME_PREFIX)) {
-      image.classList.remove(image.classList[i]);
+  for (var j = 0; j < image.classList.length; j++) {
+    if (image.classList[j].startsWith(EFFECT_CLASSNAME_PREFIX)) {
+      image.classList.remove(image.classList[j]);
     }
   }
 }
 
-function setEffectButtonChecked(effectsList, effectValue) {
-  for (var i = 0; i < effectsList.length; i++) {
-    if (effectsList[i].value === effectValue) {
-      effectsList[i].checked = true;
-      break;
+function setImageStyle(effectType, value) {
+  for (var j = 0; j < EFFECTS_INFO.length; j++) {
+    var currentEffect = EFFECTS_INFO[j];
+    if (currentEffect.type === effectType) {
+      var styleValue = currentEffect.maxValue * +value / 100;
+      if (styleValue < currentEffect.minValue) {
+        styleValue = currentEffect.minValue;
+      }
+      var styleString = currentEffect.filter + '(' + styleValue + currentEffect.unit + ')';
+      uploadedImage.style.filter = styleString;
+      return;
     }
   }
+  uploadedImage.style.filter = '';
 }
-
-function openPopup() {
-  uploadedImageForm.classList.remove('hidden');
-  document.addEventListener('keydown', onPopupEscPress);
-  setImageFormDefaultState();
-}
-
-function setImageFormDefaultState() {
-  removeImageFilters(uploadedImage);
-  setEffectButtonChecked(imageEffectsList, EFFECT_NONE_VALUE);
-  uploadedImage.classList.add(EFFECT_NONE_CLASS);
-  uploadedImage.style.transform = '';
-  scaleControlValue.value = '100%';
-  effectLevelControls.classList.add('hidden');
-  sliderPin.style.left = '100%';
-  sliderLine.style.width = '100%';
-}
-
-function onPopupEscPress(evt) {
-  if (evt.keyCode === ESC_KEYCODE) {
-    closePopup();
-  }
-}
-
-function closePopup() {
-  uploadedImageForm.classList.add('hidden');
-  document.removeEventListener('keydown', onPopupEscPress);
-  uploadButton.value = '';
-}
-
-uploadButton.addEventListener('change', function () {
-  openPopup();
-});
-
-cancelButton.addEventListener('click', function () {
-  closePopup();
-});
 
 function addEffectClickHandler(effect, image) {
-  effect.addEventListener('click', function () {
+  effect.addEventListener('click', function (evt) {
     removeImageFilters(image);
     image.classList.add(EFFECT_CLASSNAME_PREFIX + effect.value);
-    if (effect.value === EFFECT_NONE_VALUE) {
+    if (effect.value === EFFECT_NONE_NAME) {
       effectLevelControls.classList.add('hidden');
     } else {
       effectLevelControls.classList.remove('hidden');
-      sliderValueControl.value = 100;
-      sliderWidth = sliderPin.offsetParent.offsetWidth;
+      sliderValueControl.value = SLIDER_DEFAULT_VALUE;
+      setSliderPositionByValue(SLIDER_DEFAULT_VALUE);
     }
+    currentEffectName = evt.target.value;
+    setImageStyle(currentEffectName, SLIDER_DEFAULT_VALUE);
   });
 }
 
@@ -194,53 +247,103 @@ for (var i = 0; i < imageEffectsList.length; i++) {
 }
 
 
-// Управление насыщенностью эффекта
-var sliderPin = effectLevelControls.querySelector('.effect-level__pin');
-var sliderLine = effectLevelControls.querySelector('.effect-level__depth');
-var sliderValueControl = effectLevelControls.querySelector('.effect-level__value');
-var sliderWidth;
+// Набор действий при открытии попапа
+function openPopup() {
+  uploadedImageForm.classList.remove('hidden');
+  setImageFormDefaultState();
 
-sliderPin.addEventListener('mouseup', function () {
-  setEffectLevel();
-});
-
-function setEffectLevel() {
-  var pinPosition = sliderPin.offsetLeft;
-  var sliderValue = Math.floor(pinPosition / sliderWidth * 100);
-  sliderValueControl.value = sliderValue;
-}
-
-
-// Управление масштабом
-var scaleControls = uploadedImageForm.querySelector('.img-upload__scale');
-var scaleControlSmaller = scaleControls.querySelector('.scale__control--smaller');
-var scaleControlBigger = scaleControls.querySelector('.scale__control--bigger');
-var scaleControlValue = scaleControls.querySelector('.scale__control--value');
-
-scaleControlSmaller.addEventListener('click', function () {
-  if (parseInt(scaleControlValue.value, 10) > 25) {
-    changeScale(-SCALE_STEP);
-  }
-});
-
-scaleControlBigger.addEventListener('click', function () {
-  if (parseInt(scaleControlValue.value, 10) < 100) {
-    changeScale(SCALE_STEP);
-  }
-});
-
-function changeScale(changeStep) {
-  var currentValue = parseInt(scaleControlValue.value, 10);
-  var newValue = currentValue + changeStep;
-  scaleControlValue.value = newValue + '%';
-  uploadedImage.style.transform = 'scale(' + newValue / 100 + ')';
-}
-
-// Обработка поля с комментарием
-var descriptionField = document.querySelector('.text__description');
-descriptionField.addEventListener('focusin', function () {
-  document.removeEventListener('keydown', onPopupEscPress);
-});
-descriptionField.addEventListener('focusout', function () {
   document.addEventListener('keydown', onPopupEscPress);
+  cancelButton.addEventListener('click', function () {
+    closePopup();
+  });
+
+  descriptionField.addEventListener('focusin', function () {
+    document.removeEventListener('keydown', onPopupEscPress);
+  });
+  descriptionField.addEventListener('focusout', function () {
+    document.addEventListener('keydown', onPopupEscPress);
+  });
+
+
+  function setImageFormDefaultState() {
+    removeImageFilters(uploadedImage);
+    setEffectButtonChecked(imageEffectsList, EFFECT_NONE_NAME);
+    uploadedImage.classList.add(EFFECT_NONE_CLASS);
+    uploadedImage.style.transform = '';
+    uploadedImage.style.filter = '';
+    scaleControlValue.value = '100%';
+    effectLevelControls.classList.add('hidden');
+  }
+
+  function setEffectButtonChecked(effectsList, effectValue) {
+    for (var j = 0; j < effectsList.length; j++) {
+      if (effectsList[j].value === effectValue) {
+        effectsList[j].checked = true;
+        break;
+      }
+    }
+  }
+
+  function onPopupEscPress(evt) {
+    if (evt.keyCode === ESC_KEYCODE) {
+      closePopup();
+    }
+  }
+
+  function closePopup() {
+    uploadedImageForm.classList.add('hidden');
+    document.removeEventListener('keydown', onPopupEscPress);
+    uploadButton.value = '';
+  }
+}
+
+
+// Управление перемещением слайдера
+sliderPin.addEventListener('mousedown', function (evt) {
+  var sliderLinePosition = sliderPin.offsetParent.getBoundingClientRect();
+  var sliderPinPosition = sliderPin.getBoundingClientRect();
+
+  function setSliderValue() {
+    var pinPosition = sliderPin.offsetLeft;
+    var sliderValue = Math.floor(pinPosition / sliderLineDepth.offsetParent.clientWidth * 100);
+    // Приведение к int, т.к. input всегда возвращает value с типом string
+    if (+sliderValueControl.value !== sliderValue) {
+      sliderValueControl.value = sliderValue;
+    }
+  }
+
+  // Корректировка координаты с учетом наличия у пина размеров
+  function getSliderPinCorrectionX(pinPosition, currentX) {
+    var pinCenterX = pinPosition.left + pinPosition.width / 2;
+    var pinCorrectionX = pinCenterX - currentX;
+    return pinCorrectionX;
+  }
+
+  var pinCorrectionX = getSliderPinCorrectionX(sliderPinPosition, evt.clientX);
+  var startPinPositionX = evt.clientX + pinCorrectionX;
+
+  function onMouseMove(moveEvt) {
+    var newPinPositionX = moveEvt.clientX + pinCorrectionX;
+    if (newPinPositionX > sliderLinePosition.right) {
+      newPinPositionX = sliderLinePosition.right;
+    } else if (newPinPositionX < sliderLinePosition.left) {
+      newPinPositionX = sliderLinePosition.left;
+    }
+    var shift = newPinPositionX - startPinPositionX;
+    startPinPositionX = newPinPositionX;
+
+    sliderPin.style.left = (sliderPin.offsetLeft + shift) + 'px';
+    sliderLineDepth.style.width = (sliderLineDepth.offsetWidth + shift) + 'px';
+    setSliderValue();
+    setImageStyle(currentEffectName, sliderValueControl.value);
+  }
+
+  function onMouseUp() {
+    setSliderValue();
+    setImageStyle(currentEffectName, sliderValueControl.value);
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+  }
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
 });
