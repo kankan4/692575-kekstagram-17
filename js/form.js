@@ -1,6 +1,11 @@
 'use strict';
 
 (function () {
+
+  var deps = {
+    slider: window.slider
+  };
+
   var ESC_KEYCODE = 27;
   var EFFECT_CLASSNAME_PREFIX = 'effects__preview--';
   var EFFECT_NONE_NAME = 'none';
@@ -54,10 +59,6 @@
   var cancelButton = uploadedImageForm.querySelector('#upload-cancel');
   var effectLevelControls = uploadedImageForm.querySelector('.img-upload__effect-level');
   var descriptionField = document.querySelector('.text__description');
-  // Компоненты слайдера
-  var sliderPin = effectLevelControls.querySelector('.effect-level__pin');
-  var sliderLineDepth = effectLevelControls.querySelector('.effect-level__depth');
-  var sliderValueControl = effectLevelControls.querySelector('.effect-level__value');
   // Компоненты масштабирования изображения
   var scaleControls = uploadedImageForm.querySelector('.img-upload__scale');
   var scaleControlSmaller = scaleControls.querySelector('.scale__control--smaller');
@@ -104,34 +105,22 @@
 
   /**
    * Установка интенсивности эффекта изображения. Обнуляет текущий эффект, если указанный тип не найден
-   * @param {string} effectType Тип эффекта
    * @param {number} value Интенсивность в %
    */
-  function setImageStyle(effectType, value) {
+  function setImageStyle(value) {
     for (var j = 0; j < EFFECTS_INFO.length; j++) {
-      var currentEffect = EFFECTS_INFO[j];
-      if (currentEffect.type === effectType) {
-        var styleValue = currentEffect.maxValue * +value / 100;
-        if (styleValue < currentEffect.minValue) {
-          styleValue = currentEffect.minValue;
+      var possibleEffect = EFFECTS_INFO[j];
+      if (possibleEffect.type === currentEffectName) {
+        var styleValue = possibleEffect.maxValue * +value / 100;
+        if (styleValue < possibleEffect.minValue) {
+          styleValue = possibleEffect.minValue;
         }
-        var styleString = currentEffect.filter + '(' + styleValue + currentEffect.unit + ')';
+        var styleString = possibleEffect.filter + '(' + styleValue + possibleEffect.unit + ')';
         uploadedImage.style.filter = styleString;
         return;
       }
     }
     uploadedImage.style.filter = '';
-  }
-
-  /**
-   * Установка позиции слайдера на основе value из контрола effect-level__value
-   * @param {number} value
-   * @private
-   */
-  function setSliderPositionByValue(value) {
-    var valueInPixels = Math.floor(sliderLineDepth.offsetParent.clientWidth * value / 100);
-    sliderPin.style.left = valueInPixels + 'px';
-    sliderLineDepth.style.width = valueInPixels + 'px';
   }
 
   /**
@@ -148,11 +137,10 @@
         effectLevelControls.classList.add('hidden');
       } else {
         effectLevelControls.classList.remove('hidden');
-        sliderValueControl.value = SLIDER_DEFAULT_VALUE;
-        setSliderPositionByValue(SLIDER_DEFAULT_VALUE);
+        deps.slider.setSliderStateByValue(SLIDER_DEFAULT_VALUE);
       }
       currentEffectName = evt.target.value;
-      setImageStyle(currentEffectName, SLIDER_DEFAULT_VALUE);
+      setImageStyle(SLIDER_DEFAULT_VALUE);
     });
   }
 
@@ -217,74 +205,12 @@
     uploadedImageForm.classList.remove('hidden');
   }
 
-  /**
-   * Управление слайдером, регулирующим интенсивность эффекта изображения
-   * @param {Event} evt
-   * @private
-   */
-  function onSliderUse(evt) {
-    var sliderLinePosition = sliderPin.offsetParent.getBoundingClientRect();
-    var sliderPinPosition = sliderPin.getBoundingClientRect();
-
-    /**
-     * Установка value слайдера на основе текущей позиции пина
-     */
-    function setSliderValue() {
-      // Преобразование позиции на слайдере в %
-      var sliderValue = Math.floor(sliderPin.offsetLeft / sliderLineDepth.offsetParent.clientWidth * 100);
-      // Приведение к int, т.к. input всегда возвращает value с типом string
-      if (+sliderValueControl.value !== sliderValue) {
-        sliderValueControl.value = sliderValue;
-      }
-    }
-
-    /**
-     * Корректировка координаты с учетом наличия у пина размеров
-     * @param {HTMLElement} pinPosition позиция пина слайдера
-     * @param {number} currentX позиция нажатия на пин
-     * @return {number}
-     */
-    function getSliderPinCorrectionX(pinPosition, currentX) {
-      var pinCenterX = pinPosition.left + pinPosition.width / 2;
-      var pinCorrectionX = pinCenterX - currentX;
-      return pinCorrectionX;
-    }
-
-    var pinCorrectionX = getSliderPinCorrectionX(sliderPinPosition, evt.clientX);
-    var startPinPositionX = evt.clientX + pinCorrectionX;
-
-    function onMouseMove(moveEvt) {
-      var newPinPositionX = moveEvt.clientX + pinCorrectionX;
-      if (newPinPositionX > sliderLinePosition.right) {
-        newPinPositionX = sliderLinePosition.right;
-      } else if (newPinPositionX < sliderLinePosition.left) {
-        newPinPositionX = sliderLinePosition.left;
-      }
-      var shift = newPinPositionX - startPinPositionX;
-      startPinPositionX = newPinPositionX;
-
-      sliderPin.style.left = (sliderPin.offsetLeft + shift) + 'px';
-      sliderLineDepth.style.width = (sliderLineDepth.offsetWidth + shift) + 'px';
-      setSliderValue();
-      setImageStyle(currentEffectName, sliderValueControl.value);
-    }
-
-    function onMouseUp() {
-      setSliderValue();
-      setImageStyle(currentEffectName, sliderValueControl.value);
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    }
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  }
-
   function addFormHandlers() {
     uploadButton.addEventListener('change', openPopup);
-    sliderPin.addEventListener('mousedown', onSliderUse);
     for (var i = 0; i < imageEffectsList.length; i++) {
       addEffectClickHandler(imageEffectsList[i], uploadedImage);
     }
+    deps.slider.initSlider(setImageStyle);
   }
 
   window.form = {
