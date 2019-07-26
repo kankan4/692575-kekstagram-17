@@ -17,7 +17,7 @@
     'Я поскользнулся на банановой кожуре и уронил фотоаппарат на кота и у меня получилась фотография лучше.',
     'Лица у людей на фотке перекошены, как будто их избивают. Как можно было поймать такой неудачный момент?!'
   ];
-  var nameTemplates = {
+  var NameTemplates = {
     FIRST_PART: ['Пе', 'Ар', 'Па', 'Ма', 'Ва', 'Ки'],
     LAST_PART: ['тур', 'вел', 'зик', 'силий', 'тя']
   };
@@ -57,7 +57,7 @@
       var comment = {
         avatar: 'img/avatar-' + deps.util.getRandomInteger(1, AVATARS_NUMBER) + '.svg',
         message: commentText,
-        name: createRandomName(nameTemplates)
+        name: createRandomName(NameTemplates)
       };
       comments.push(comment);
     }
@@ -67,9 +67,9 @@
 
   /**
    * Генерация моков с изображениями и их комментариями для кекстаграмма
-   * @return {array} массив объектов с информацией об изображениях
+   * @param {function} onSuccess callback, в который передаются сгенерированые данные
    */
-  function generateMocks() {
+  function mock(onSuccess) {
     var picturesInfo = [];
     for (var i = 1; i <= PHOTOS_NUMBER; i++) {
       var picture = {
@@ -79,11 +79,40 @@
       };
       picturesInfo.push(picture);
     }
-    return picturesInfo;
+    onSuccess(picturesInfo);
+  }
+
+  /**
+   * Получение данных с сервера
+   * @param {string} url адрес сервиса, предоставляющего данные
+   * @param {function} onSuccess callback, в который передаются успешно полученные данные
+   * @param {function} onError callback, в который передается текст ошибки
+   */
+  function load(url, onSuccess, onError) {
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = 'json';
+    xhr.timeout = 15000;
+
+    xhr.addEventListener('load', function () {
+      if (xhr.status === 200) {
+        onSuccess(xhr.response);
+      } else {
+        onError('Cтатус ответа: ' + xhr.status + ' ' + xhr.statusText);
+      }
+    });
+    xhr.addEventListener('error', function () {
+      onError(new Error('Ошибка соединения'));
+    });
+    xhr.addEventListener('timeout', function () {
+      onError(new Error('Таймаут соединения: ' + xhr.timeout + 'мс'));
+    });
+
+    xhr.open('GET', url);
+    xhr.send();
   }
 
   window.data = {
-    generateMocks: generateMocks
+    mock: mock,
+    load: load,
   };
-
 })();

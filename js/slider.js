@@ -6,7 +6,7 @@
   var sliderLineDepth = document.querySelector('.effect-level__depth');
   var sliderValueControl = document.querySelector('.effect-level__value');
 
-  function initSlider(callback) {
+  function init(callback) {
     /**
      * Управление слайдером
      * @param {Event} evt
@@ -75,7 +75,7 @@
    * @param {number} value
    * @private
    */
-  function setSliderStateByValue(value) {
+  function setStateByValue(value) {
     sliderValueControl.value = value;
     var valueInPixels = Math.floor(sliderLineDepth.offsetParent.clientWidth * value / 100);
     sliderPin.style.left = valueInPixels + 'px';
@@ -83,7 +83,7 @@
   }
 
   window.slider = {
-    initSlider: initSlider,
-    setSliderStateByValue: setSliderStateByValue
+    init: init,
+    setStateByValue: setStateByValue
   };
 })();

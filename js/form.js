@@ -137,7 +137,7 @@
         effectLevelControls.classList.add('hidden');
       } else {
         effectLevelControls.classList.remove('hidden');
-        deps.slider.setSliderStateByValue(SLIDER_DEFAULT_VALUE);
+        deps.slider.setStateByValue(SLIDER_DEFAULT_VALUE);
       }
       currentEffectName = evt.target.value;
       setImageStyle(SLIDER_DEFAULT_VALUE);
@@ -205,15 +205,15 @@
     uploadedImageForm.classList.remove('hidden');
   }
 
-  function addFormHandlers() {
+  function init() {
     uploadButton.addEventListener('change', openPopup);
     for (var i = 0; i < imageEffectsList.length; i++) {
       addEffectClickHandler(imageEffectsList[i], uploadedImage);
     }
-    deps.slider.initSlider(setImageStyle);
+    deps.slider.init(setImageStyle);
   }
 
   window.form = {
-    addFormHandlers: addFormHandlers
+    init: init
   };
 })();

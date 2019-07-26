@@ -1,11 +1,16 @@
 'use strict';
+(function () {
+  var deps = {
+    data: window.data,
+    gallery: window.gallery,
+    form: window.form
+  };
 
-var deps = {
-  data: window.data,
-  gallery: window.gallery,
-  form: window.form
-};
+  var errors = [];
+  function saveError(message) {
+    errors.push(message);
+  }
 
-var picturesInfo = deps.data.generateMocks();
-deps.gallery.addPicturesToPage(picturesInfo);
-deps.form.addFormHandlers();
+  deps.data.load('https://js.dump.academy/kekstagram/data', deps.gallery.init, saveError);
+  deps.form.init();
+})();

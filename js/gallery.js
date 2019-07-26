@@ -28,7 +28,7 @@
    * Добавление сгенерированных изображений на главную страницу
    * @param {array} picturesInfo массив объектов с информацией об изображениях
    */
-  function addPicturesToPage(picturesInfo) {
+  function init(picturesInfo) {
     var fragment = document.createDocumentFragment();
     for (var i = 0; i < picturesInfo.length; i++) {
       var pictureElement = createPictureElement(picturesInfo[i]);
@@ -40,6 +40,6 @@
   }
 
   window.gallery = {
-    addPicturesToPage: addPicturesToPage
+    init: init
   };
 })();
