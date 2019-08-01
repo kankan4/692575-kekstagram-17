@@ -30,11 +30,10 @@
    */
   function init(picturesInfo) {
     var fragment = document.createDocumentFragment();
-    for (var i = 0; i < picturesInfo.length; i++) {
-      var pictureElement = createPictureElement(picturesInfo[i]);
+    picturesInfo.forEach(function (it) {
+      var pictureElement = createPictureElement(it);
       fragment.appendChild(pictureElement);
-    }
-
+    });
     var picturesList = document.querySelector('.pictures');
     picturesList.appendChild(fragment);
   }

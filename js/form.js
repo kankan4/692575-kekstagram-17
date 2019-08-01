@@ -12,43 +12,38 @@
   var EFFECT_NONE_CLASS = EFFECT_CLASSNAME_PREFIX + EFFECT_NONE_NAME;
   var SCALE_STEP = 25;
   var SLIDER_DEFAULT_VALUE = 100;
-  var EFFECTS_INFO = [
-    {
-      type: 'chrome',
+  var effectFiltersMap = {
+    'chrome': {
       filter: 'grayscale',
       minValue: 0,
       maxValue: 1,
       unit: ''
     },
-    {
-      type: 'sepia',
+    'sepia': {
       filter: 'sepia',
       minValue: 0,
       maxValue: 1,
       unit: ''
     },
-    {
-      type: 'marvin',
+    'marvin': {
       filter: 'invert',
       minValue: 0,
       maxValue: 100,
       unit: '%'
     },
-    {
-      type: 'phobos',
+    'phobos': {
       filter: 'blur',
       minValue: 0,
       maxValue: 3,
       unit: 'px'
     },
-    {
-      type: 'heat',
+    'heat': {
       filter: 'brightness',
       minValue: 1,
       maxValue: 3,
       unit: ''
     }
-  ];
+  };
 
 
   var uploadButton = document.querySelector('#upload-file');
@@ -97,8 +92,9 @@
    */
   function removeImageFilters(image) {
     for (var j = 0; j < image.classList.length; j++) {
-      if (image.classList[j].startsWith(EFFECT_CLASSNAME_PREFIX)) {
-        image.classList.remove(image.classList[j]);
+      var currentClass = image.classList[j];
+      if (currentClass.startsWith(EFFECT_CLASSNAME_PREFIX)) {
+        image.classList.remove(currentClass);
       }
     }
   }
@@ -108,19 +104,18 @@
    * @param {number} value Интенсивность в %
    */
   function setImageStyle(value) {
-    for (var j = 0; j < EFFECTS_INFO.length; j++) {
-      var possibleEffect = EFFECTS_INFO[j];
-      if (possibleEffect.type === currentEffectName) {
-        var styleValue = possibleEffect.maxValue * +value / 100;
-        if (styleValue < possibleEffect.minValue) {
-          styleValue = possibleEffect.minValue;
-        }
-        var styleString = possibleEffect.filter + '(' + styleValue + possibleEffect.unit + ')';
-        uploadedImage.style.filter = styleString;
-        return;
+    var filterInfo = effectFiltersMap[currentEffectName];
+    if (filterInfo) {
+      var styleValue = filterInfo.maxValue * +value / 100;
+      if (styleValue < filterInfo.minValue) {
+        styleValue = filterInfo.minValue;
       }
+      var styleString = filterInfo.filter + '(' + styleValue + filterInfo.unit + ')';
+
+      uploadedImage.style.filter = styleString;
+    } else {
+      uploadedImage.style.filter = '';
     }
-    uploadedImage.style.filter = '';
   }
 
   /**
@@ -207,9 +202,10 @@
 
   function init() {
     uploadButton.addEventListener('change', openPopup);
-    for (var i = 0; i < imageEffectsList.length; i++) {
-      addEffectClickHandler(imageEffectsList[i], uploadedImage);
-    }
+    // array foreach для совместиомсти с IE
+    Array.prototype.forEach.call(imageEffectsList, function (it) {
+      addEffectClickHandler(it, uploadedImage);
+    });
     deps.slider.init(setImageStyle);
   }
 

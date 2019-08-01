@@ -11,6 +11,7 @@
     errors.push(message);
   }
 
+  // deps.data.mock(deps.gallery.init);
   deps.data.load('https://js.dump.academy/kekstagram/data', deps.gallery.init, saveError);
   deps.form.init();
 })();
